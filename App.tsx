@@ -1,76 +1,94 @@
-import React, {useState,FC} from "React";
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, FlatList,Text, View,Button } from 'react-native';
-
-import Header from "./components/Header";
+import React, {useEffect,useState} from "react";
+import { StyleSheet, 
+        Platform,
+        useWindowDimensions,
+        TextInput, 
+        View,
+        TouchableOpacity  } from 'react-native';
 import DrinkComponent from "./components/DrinkComponent";
 import {RequestData} from "./src/RequestData";
-import {SearchBar}from "./components/SearchBar"
-import Drink from "./src/DrinkInterface";
+import {createNativeStackNavigator} from "@react-navigation/native-stack";
+import {NavigationContainer} from "@react-navigation/native";
+import DrinkInterface from "./src/drinkInterface";
 
-export default class App extends React.Component <{}, {drinkSearched:string,loading:boolean, drinkFound: any }> {
-  
-  constructor(props:any){
-    super(props);
-    this.state = {
-      drinkSearched : "negroni",
-      loading:false,
-      drinkFound:[],
-    };
-  }
- 
-    handleRequest = async (drink:string) =>{
-      this.setState({loading:true}, async() => {
+function HomeScreen(){
+    const [data,setData] = useState([]);
+
+    const handleRequest = async(drink:string) => {
         try{
             const response = await RequestData(drink);
             const responseJson = await response.json();
-           this.setState({drinkFound:responseJson.drinks});
-               console.log(this.state.drinkFound);
-            
-            this.setState({
-              loading:false
-            });
+            console.log(responseJson.drinks);
+            if(responseJson == null){
+                setData([]);
+                
+            }
+            else{
+                setData(responseJson.drinks);
+            console.log(data);
+            }
+          
         }catch(error){
-          this.setState({
-            loading:false
-          });
-          throw error;
+            console.error(error);
         }
-      }
-    )}
+    }
 
- render(){
-  const {drinkFound,loading}= this.state;
-  return (
-    <View style={styles.container}>
-      <Header/>
-      <Button title="Press" onPress={() => this.handleRequest("negroni")}></Button>
-      <FlatList data={drinkFound}
-      renderItem={({item}) => (
-        <DrinkComponent idDrink={item.idDrink} strDrink={item.strDrink} imgDrink={item.strDrinkThumb}/>
-      )}
-      />
-      <SearchBar placeholder="scrivi" onSubmit={this.handleRequest}/>
+    useEffect( () => {
+       
+    },[]);
 
-    </View>
-  );
- }
+    return(
+        <View style={styles.container}>
+            <TextInput placeholder="Find a Cocktail..." onSubmitEditing={(value) => handleRequest(value.nativeEvent.text)}></TextInput>
+            {
+                data.map((drinkFound:any,index:number) => 
+                <TouchableOpacity key={index}>
+                    <DrinkComponent idDrink={drinkFound.idDrink} 
+                    strDrink={drinkFound.strDrink} imgDrink={drinkFound.strDrinkThumb}/>
+                </TouchableOpacity>
+                )
+            }
+        </View>
+    )
+}
+
+const Stack = createNativeStackNavigator();
+
+export default function App(){
+    return(
+        <NavigationContainer >
+
+            <Stack.Navigator initialRouteName="Home">
+                <Stack.Screen 
+                        name="Home" 
+                        component={HomeScreen}
+                        options={{
+                            title:'Cocktaildb.com',
+                            headerStyle:{
+                                backgroundColor:"#1b0710",
+                            },
+                            headerTintColor: '#fff',
+                            headerTitleStyle: {
+                                fontWeight: 'bold',
+                                color:"#fff",}
+                            }}    
+                />
+
+            </Stack.Navigator>
+        </NavigationContainer>
+    )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    color:'#fff',
-    fontFamily:'DejaVu Sans Mono, monospace',
-    flex: 1,
-    backgroundColor: '#2c0d1b',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text:{
-    position:"relative",
-    top:100,
-    alignItems:"center",
-    color:'#fff',
-    fontFamily:'DejaVu Sans Mono, monospace'
-  },
-});
+    container:{
+        backgroundColor:"#2c0d1b",
+        color:'#fff',
+        height:"100%",
+    },
+    products:{
+      flexDirection:"column",
+      justifyContent:"center",
+      alignItems:"center",
+      flexBasis:"20%",
+    },
+})
